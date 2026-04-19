@@ -6,12 +6,12 @@ app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
-// test route
+// route test
 app.get("/", (req, res) => {
   res.send("Induslead backend running 🚀");
 });
 
-// route entreprises
+// route entreprises (test simple pour vérifier que ça ne crash plus)
 app.get("/entreprises", async (req, res) => {
   try {
     const response = await fetch(
@@ -26,6 +26,7 @@ app.get("/entreprises", async (req, res) => {
   }
 });
 
+// IMPORTANT : PORT dynamique pour Railway
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
