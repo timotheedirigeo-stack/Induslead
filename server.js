@@ -6,15 +6,13 @@ app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
-// temporaire : endpoint stable pour brancher ton appli sans re-bugger
 app.get("/", (_req, res) => {
-  res.send("Induslead backend LIVE 🚀");
+  res.send("INDUSLEAD V2 OK");
 });
 
 app.get("/entreprises", (_req, res) => {
   res.json({
     status: "ok",
-    message: "collecte backend branchée, source massive à brancher ensuite",
     data: [
       {
         nom: "LAFARGE BETONS",
