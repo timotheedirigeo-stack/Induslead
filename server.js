@@ -28,19 +28,26 @@ app.get("/entreprises", async (_req, res) => {
   try {
     const url =
       "https://recherche-entreprises.api.gouv.fr/search" +
-      "?section_activite_principale=B,C,D,E" +
+      "?q=a" +
+      "&section_activite_principale=B,C,D,E" +
       "&etat_administratif=A" +
       "&page=1" +
       "&per_page=20";
 
     const response = await fetch(url, {
       headers: {
-        "Accept": "application/json",
+        Accept: "application/json",
         "User-Agent": "IndusLead/1.0"
       }
     });
 
-    const data = await response.json();
+    const raw = await response.text();
+
+    if (!response.ok) {
+      return res.status(response.status).send(raw);
+    }
+
+    const data = JSON.parse(raw);
 
     const entreprises = Array.isArray(data.results)
       ? data.results.map(mapCompany).filter(e => e.nom)
