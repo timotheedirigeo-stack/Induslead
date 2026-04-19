@@ -6,7 +6,7 @@ app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
-// curseur global simple
+// curseur global pour parcourir les pages
 let pageCursor = 1;
 
 function mapCompany(c) {
@@ -24,13 +24,14 @@ function mapCompany(c) {
 }
 
 app.get("/", (_req, res) => {
-  res.send("INDUSLEAD BULK OK");
+  res.send("INDUSLEAD SCALE OK 🚀");
 });
 
 app.get("/entreprises", async (req, res) => {
   try {
-    const batchSize = Math.min(Number(req.query.batch || 100), 200);
-    const perPage = 25; // petit lot API, plus stable
+    const batchSize = Math.min(Number(req.query.batch || 200), 200);
+    const perPage = 20;
+
     const pagesNeeded = Math.ceil(batchSize / perPage);
 
     const all = [];
@@ -57,18 +58,23 @@ app.get("/entreprises", async (req, res) => {
 
       const data = await response.json();
       const items = Array.isArray(data.results) ? data.results : [];
+
       all.push(...items);
     }
 
+    // avance dans les pages à chaque appel
     pageCursor += pagesNeeded;
+
+    // reset sécurité pour éviter boucle infinie API
     if (pageCursor > 1000) pageCursor = 1;
 
+    // déduplication
     const map = new Map();
 
     all
       .map(mapCompany)
-      .filter((e) => e.nom && e.siret)
-      .forEach((e) => {
+      .filter(e => e.nom && e.siret)
+      .forEach(e => {
         if (!map.has(e.siret)) {
           map.set(e.siret, e);
         }
@@ -78,11 +84,11 @@ app.get("/entreprises", async (req, res) => {
 
     res.json({
       status: "ok",
-      batch: batchSize,
-      next_page_cursor: pageCursor,
       count: entreprises.length,
+      next_page_cursor: pageCursor,
       data: entreprises
     });
+
   } catch (err) {
     res.status(500).json({
       status: "error",
