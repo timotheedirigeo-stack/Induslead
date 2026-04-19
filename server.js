@@ -5,29 +5,28 @@ import cors from "cors";
 const app = express();
 app.use(cors());
 
-function isIndustry(naf){
-  return ["B","C","D","E"].includes(naf?.[0]);
-}
+const PORT = process.env.PORT || 3000;
 
-app.get("/leads", async (req, res) => {
+// test route
+app.get("/", (req, res) => {
+  res.send("Induslead backend running 🚀");
+});
+
+// route entreprises
+app.get("/entreprises", async (req, res) => {
   try {
-    const r = await fetch("https://recherche-entreprises.api.gouv.fr/search?q=&per_page=20");
-    const data = await r.json();
+    const response = await fetch(
+      "https://api.insee.fr/entreprises/sirene/V3/siret?q=activitePrincipaleUniteLegale:10"
+    );
 
-    const leads = data.results
-      .filter(e => isIndustry(e.activite_principale))
-      .map(e => ({
-        name: e.nom_entreprise,
-        city: e.siege?.libelle_commune,
-        site: "",
-        email: "",
-        tel: ""
-      }));
+    const data = await response.json();
 
-    res.json(leads);
+    res.json(data);
   } catch (err) {
-    res.json([]);
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(3000, () => console.log("server running"));
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
