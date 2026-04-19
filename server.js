@@ -6,7 +6,7 @@ app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
-// on garde un offset en mémoire pour ne pas renvoyer toujours la même page
+// curseur global simple
 let pageCursor = 1;
 
 function mapCompany(c) {
@@ -24,15 +24,18 @@ function mapCompany(c) {
 }
 
 app.get("/", (_req, res) => {
-  res.send("INDUSLEAD V3 OK");
+  res.send("INDUSLEAD BULK OK");
 });
 
-app.get("/entreprises", async (_req, res) => {
+app.get("/entreprises", async (req, res) => {
   try {
-    const all = [];
-    const pagesToFetch = 3; // 3 pages x 20 = ~60 résultats bruts
+    const batchSize = Math.min(Number(req.query.batch || 100), 200);
+    const perPage = 25; // petit lot API, plus stable
+    const pagesNeeded = Math.ceil(batchSize / perPage);
 
-    for (let i = 0; i < pagesToFetch; i++) {
+    const all = [];
+
+    for (let i = 0; i < pagesNeeded; i++) {
       const page = pageCursor + i;
 
       const url =
@@ -41,7 +44,7 @@ app.get("/entreprises", async (_req, res) => {
         "&section_activite_principale=B,C,D,E" +
         "&etat_administratif=A" +
         `&page=${page}` +
-        "&per_page=20";
+        `&per_page=${perPage}`;
 
       const response = await fetch(url, {
         headers: {
@@ -57,11 +60,9 @@ app.get("/entreprises", async (_req, res) => {
       all.push(...items);
     }
 
-    // avance le curseur pour varier les résultats au prochain clic
-    pageCursor += pagesToFetch;
-    if (pageCursor > 50) pageCursor = 1;
+    pageCursor += pagesNeeded;
+    if (pageCursor > 1000) pageCursor = 1;
 
-    // normalisation + déduplication
     const map = new Map();
 
     all
@@ -73,10 +74,12 @@ app.get("/entreprises", async (_req, res) => {
         }
       });
 
-    const entreprises = Array.from(map.values()).slice(0, 50);
+    const entreprises = Array.from(map.values()).slice(0, batchSize);
 
     res.json({
       status: "ok",
+      batch: batchSize,
+      next_page_cursor: pageCursor,
       count: entreprises.length,
       data: entreprises
     });
